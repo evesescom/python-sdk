@@ -1,0 +1,98 @@
+name: Publish to PyPI
+
+# Triggered when a tag of the form `v<X.Y.Z>` is pushed. The git tag must match
+# the `version` field in pyproject.toml — Hatch builds the sdist + wheel from
+# the source tree and PyPI rejects re-uploads of the same version, so a
+# mismatch surfaces immediately as a build/upload error.
+#
+# Authentication uses a classic PyPI API token stored as a GitHub repo secret
+# named `PYPI_API_TOKEN`. One-time setup:
+#   1. PyPI → Account settings → API tokens → Add API token (scoped to project
+#      `eveses` once it exists; until then a temporary account-wide token).
+#   2. GitHub → repo Settings → Secrets and variables → Actions → New
+#      repository secret → Name: PYPI_API_TOKEN → Value: paste the token
+#      (the full string including the `pypi-` prefix).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # manual re-run for debugging
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ['3.9', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install package + dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+      - name: Run tests
+        run: pytest -q
+
+  build:
+    name: Build sdist + wheel
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      - name: Build distributions
+        run: python -m build
+      - name: Verify tag matches pyproject version
+        # Only meaningful for tag pushes — workflow_dispatch runs use a branch
+        # ref, where this check would always fail.
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg_version=$(python -c "import tomllib; print(tomllib.loads(open('pyproject.toml','rb').read().decode())['project']['version'])")
+          if [ "$tag" != "$pkg_version" ]; then
+            echo "::error::Git tag v$tag does not match pyproject.toml version $pkg_version"
+            exit 1
+          fi
+      - name: Upload distributions as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Never publish from a manual workflow_dispatch — only from a real
+    # v<X.Y.Z> tag push. Manual runs are for debugging the test+build flow.
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          password: ${{ secrets.PYPI_API_TOKEN }}
