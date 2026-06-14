@@ -27,7 +27,7 @@ from .exceptions import (
 
 DEFAULT_BASE_URL = "https://api.eveses.io"
 DEFAULT_TIMEOUT_S = 30.0
-DEFAULT_USER_AGENT = "eveses-python/0.1.0"
+DEFAULT_USER_AGENT = "eveses-python/0.2.0"
 
 
 class Eveses:
