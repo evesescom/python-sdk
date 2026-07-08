@@ -278,6 +278,13 @@ class Proxies:
         )
         return _map_order(_unwrap(res))
 
+    def reset_sessions(self) -> None:
+        """
+        Reset the current user's residential sticky sessions; the next request
+        rotates to fresh IPs. Requires a provisioned residential sub-user.
+        """
+        self._client.request("POST", "/api/account/proxies/sessions/reset")
+
     # -------------------------------------------- residential subscription --
     def subscription_cancel(self) -> ProxySubscription:
         return self._subscription("cancel")

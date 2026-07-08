@@ -181,6 +181,16 @@ class ProxyManagementTests(unittest.TestCase):
         self.assertEqual(json.loads(kwargs["data"]), {"days": 60})
         self.assertEqual(order.uuid, "o1")
 
+    def test_reset_sessions_posts_to_sessions_reset(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"reset": True})
+        ])
+        client = _client(session)
+        client.proxies.reset_sessions()
+        method, url, _ = session.calls[0]
+        self.assertEqual(method, "POST")
+        self.assertEqual(url, "https://api.example.test/api/account/proxies/sessions/reset")
+
     def test_subscription_cancel(self) -> None:
         session = _FakeSession([
             _FakeResponse(200, {"data": {"status": "cancelled", "gb": 5.0, "discount_pct": 0}})

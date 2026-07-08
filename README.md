@@ -108,6 +108,7 @@ client.proxies.set_auto_renew(order.uuid, True)     # toggle auto_extend
 client.proxies.subscription_cancel()                # residential subscription
 client.proxies.subscription_pause()
 client.proxies.subscription_resume()
+client.proxies.reset_sessions()                     # rotate residential sticky-session IPs
 
 # Targeting + usage.
 client.proxies.locations(type="residential")        # {type, geo} / {type, products}
