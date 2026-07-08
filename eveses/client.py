@@ -62,12 +62,18 @@ class Eveses:
         # Lazy import to avoid circular references at module-import time.
         from .activations import Activations
         from .catalog import Catalog
+        from .emails import Emails
+        from .proxies import Proxies
         from .wallet import Wallet
+        from .web_unblocker import WebUnblocker
         from .webhooks import Webhooks
 
         self.activations = Activations(self)
         self.wallet = Wallet(self)
         self.catalog = Catalog(self)
+        self.proxies = Proxies(self)
+        self.web_unblocker = WebUnblocker(self)
+        self.emails = Emails(self)
         # Static-like helper. Also importable as `from eveses import Webhooks`.
         self.webhooks = Webhooks
 

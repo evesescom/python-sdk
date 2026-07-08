@@ -25,6 +25,14 @@ from .catalog import (
     CatalogServicesResponse,
 )
 from .client import Eveses
+from .emails import (
+    EmailAddress,
+    EmailDomain,
+    EmailDomainsResponse,
+    EmailMessage,
+    EmailQuote,
+    Emails,
+)
 from .exceptions import (
     EvesesAuthError,
     EvesesError,
@@ -34,7 +42,31 @@ from .exceptions import (
     EvesesServerError,
     EvesesValidationError,
 )
+from .proxies import (
+    Proxies,
+    ProxyOrder,
+    ProxyOverview,
+    ProxyQuote,
+    ProxySubscription,
+    ResidentialAccess,
+    ResidentialPackage,
+    ResidentialPackagesResponse,
+    StaticCatalogResponse,
+    StaticLocation,
+    StaticPlan,
+    StaticProduct,
+)
 from .wallet import Wallet, WalletBalance
+from .web_unblocker import (
+    WebUnblocker,
+    WebUnblockerAccess,
+    WebUnblockerOrder,
+    WebUnblockerOverview,
+    WebUnblockerPackage,
+    WebUnblockerPackagesResponse,
+    WebUnblockerQuote,
+    WebUnblockerSubscription,
+)
 from .webhooks import Webhooks, verify_webhook
 
 __version__ = "0.2.0"
@@ -44,12 +76,38 @@ __all__ = [
     "Activations",
     "Catalog",
     "Wallet",
+    "Proxies",
+    "WebUnblocker",
+    "Emails",
     "Webhooks",
     "verify_webhook",
     "Order",
     "OrderSms",
     "OrderSmsBundle",
     "WalletBalance",
+    "ProxyOverview",
+    "ProxyOrder",
+    "ProxySubscription",
+    "ProxyQuote",
+    "ResidentialAccess",
+    "ResidentialPackage",
+    "ResidentialPackagesResponse",
+    "StaticProduct",
+    "StaticPlan",
+    "StaticLocation",
+    "StaticCatalogResponse",
+    "WebUnblockerOverview",
+    "WebUnblockerAccess",
+    "WebUnblockerOrder",
+    "WebUnblockerSubscription",
+    "WebUnblockerPackage",
+    "WebUnblockerPackagesResponse",
+    "WebUnblockerQuote",
+    "EmailAddress",
+    "EmailMessage",
+    "EmailDomain",
+    "EmailDomainsResponse",
+    "EmailQuote",
     "CatalogCountriesResponse",
     "CatalogServicesResponse",
     "CatalogPricingResponse",

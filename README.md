@@ -1,7 +1,8 @@
 # eveses (Python SDK)
 
 Official Python SDK for the [Eveses](https://eveses.com) developer API.
-Activations, wallet, catalog (countries / services / pricing), and webhook signature verification.
+Activations, wallet, catalog (countries / services / pricing), proxies,
+web unblocker, emails, and webhook signature verification.
 
 ## Install
 
@@ -72,6 +73,89 @@ pricing   = client.catalog.pricing(mode="activation", country="ua", service="tel
 
 `mode` accepts ``"activation"`` or ``"rent"``. For rentals, pass
 ``duration_minutes=...`` to ``pricing(...)`` to filter to a single duration.
+
+## Proxies
+
+Buy and manage residential (metered, GB) and static (per-IP) proxies. Money is
+always integer cents; `currency` is `"USD"`. Quote / catalog objects preserve
+the raw wire map under `.raw`.
+
+```python
+# What the user already has: residential connection + subscription + orders.
+overview = client.proxies.list()
+if overview.residential:
+    print(overview.residential.curl)  # ready-to-run curl under the white-label host
+
+# Package ladder + per-IP catalogue (products / plans / locations).
+packages = client.proxies.packages().packages
+catalog  = client.proxies.catalog().products   # plan.price_cents == None → call quote()
+
+# Quote before buying — residential (GB) or a static selection.
+q = client.proxies.quote(type="residential", gb=5, subscription=True)
+q = client.proxies.quote(type="isp", product_id=1, plan_id=2, location_id=3, quantity=2)
+print(q.price_cents)
+
+# Purchase (Idempotency-Key sent when idempotency_key is provided).
+order = client.proxies.purchase(type="residential", gb=5, idempotency_key="my-uuid")
+order = client.proxies.purchase(
+    type="isp", product_id=1, plan_id=2, location_id=3, quantity=2,
+    idempotency_key="my-uuid",
+)
+
+# Manage.
+client.proxies.extend(order.uuid, days=30)          # static per-IP orders only
+client.proxies.set_auto_renew(order.uuid, True)     # toggle auto_extend
+client.proxies.subscription_cancel()                # residential subscription
+client.proxies.subscription_pause()
+client.proxies.subscription_resume()
+
+# Targeting + usage.
+client.proxies.locations(type="residential")        # {type, geo} / {type, products}
+client.proxies.usage(from_="2026-06-01", to="2026-06-30")
+```
+
+## Web Unblocker
+
+An anti-bot scraping endpoint billed per successful request (a separate product
+from proxies).
+
+```python
+overview = client.web_unblocker.list()
+if overview.access:
+    print(overview.access.requests_remaining)
+
+packages = client.web_unblocker.packages().packages
+quote    = client.web_unblocker.quote(requests=10_000)
+print(quote.price_cents, quote.per_1k_cents)
+
+order = client.web_unblocker.purchase(
+    requests=10_000, subscription=False, idempotency_key="my-uuid",
+)
+
+client.web_unblocker.subscription_cancel()
+client.web_unblocker.subscription_pause()
+client.web_unblocker.subscription_resume()
+```
+
+## Emails
+
+Rent an inbox address (our own catch-all domains, or a reseller) and read its
+mail. Fetching a single address (`get`) also live-syncs reseller inboxes — poll
+it to receive new mail.
+
+```python
+domains = client.emails.domains(site="facebook.com").domains  # `site` for resellers
+quote   = client.emails.quote(domain="evs.io", provider="hero")
+
+addr = client.emails.purchase(domain="evs.io", idempotency_key="my-uuid")
+
+# Poll the address to sync + read messages.
+inbox = client.emails.get(addr.uuid)
+for msg in inbox.messages:
+    print(msg.from_, msg.subject, msg.body)  # body may be text or HTML
+
+addr = client.emails.delete(addr.uuid)  # soft cancel, no refund → status "cancelled"
+```
 
 ## Webhook verification
 

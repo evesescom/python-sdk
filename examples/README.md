@@ -8,6 +8,7 @@ stdlib + the SDK itself (which pulls in `requests`).
 | `quickstart.py` | Construct the client, check wallet balance, list services, buy ONE activation with an idempotency key. |
 | `buy_and_poll.py` | Full activation lifecycle: create → poll SMS every 5s for 5 min → `finish()` (or `cancel()` on Ctrl-C / timeout). |
 | `webhook_server.py` | Minimal `http.server` endpoint that verifies `X-Eveses-Signature` with `Webhooks.verify` and prints the parsed payload. |
+| `proxies_unblocker_emails.py` | Tour of the proxies / web_unblocker / emails modules: quote everything, and buy only when `EVESES_BUY=1`. |
 
 ## Prerequisites
 
