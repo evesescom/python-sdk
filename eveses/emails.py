@@ -19,10 +19,25 @@ if TYPE_CHECKING:  # pragma: no cover
 # ---------------------------------------------------------------- models --
 @dataclass
 class EmailMessage:
+    id: Optional[str] = None
     from_: Optional[str] = None
     subject: Optional[str] = None
     body: Optional[str] = None  # may be plain text or HTML
     received_at: Optional[str] = None
+    read_at: Optional[str] = None
+    is_read: bool = False
+    raw: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class EmailMessagesPage:
+    """A page of inbox messages with cursor-free pagination metadata."""
+
+    messages: List[EmailMessage] = field(default_factory=list)
+    page: int = 1
+    per_page: int = 20
+    total: int = 0
+    has_more: bool = False
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -73,9 +88,15 @@ class Emails:
         self._client = client
 
     # ------------------------------------------------------------ reads --
-    def list(self) -> List[EmailAddress]:
-        """The user's rented addresses."""
-        d = _unwrap(self._client.request("GET", "/api/account/emails"))
+    def list(self, *, include_released: bool = False) -> List[EmailAddress]:
+        """
+        The user's rented addresses. Pass ``include_released=True`` to also
+        return released (cancelled) addresses.
+        """
+        params: Dict[str, Any] = {}
+        if include_released:
+            params["include_released"] = "1"
+        d = _unwrap(self._client.request("GET", "/api/account/emails", params=params))
         return [_map_address(e) for e in (d.get("emails") or []) if isinstance(e, dict)]
 
     def domains(self, *, site: Optional[str] = None) -> EmailDomainsResponse:
@@ -116,6 +137,14 @@ class Emails:
         res = self._client.request("GET", f"/api/account/emails/{_quote(uuid)}")
         return _map_address(_unwrap(res))
 
+    def messages(self, uuid: str, *, page: int = 1, per_page: int = 20) -> EmailMessagesPage:
+        """A paginated page of an address's received messages."""
+        params: Dict[str, Any] = {"page": page, "per_page": per_page}
+        d = _unwrap(self._client.request(
+            "GET", f"/api/account/emails/{_quote(uuid)}/messages", params=params,
+        ))
+        return _map_messages_page(d)
+
     # ----------------------------------------------------------- writes --
     def purchase(
         self,
@@ -140,6 +169,17 @@ class Emails:
             "POST", "/api/account/emails/purchase", json_body=body, headers=headers,
         )
         return _map_address(_unwrap(res))
+
+    def mark_read(self, uuid: str, message_id: str) -> Dict[str, Any]:
+        """
+        Mark one message as read. Returns the raw decoded map
+        (``{"id": "<message_id>", "read": true}``).
+        """
+        res = self._client.request(
+            "POST",
+            f"/api/account/emails/{_quote(uuid)}/messages/{_quote(message_id)}/read",
+        )
+        return _unwrap(res)
 
     def delete(self, uuid: str) -> EmailAddress:
         """
@@ -175,11 +215,32 @@ def _map_address(d: Dict[str, Any]) -> EmailAddress:
 
 
 def _map_message(d: Dict[str, Any]) -> EmailMessage:
+    mid = d.get("id")
     return EmailMessage(
+        id=str(mid) if mid is not None else None,
         from_=_str_or_none(d.get("from")),
         subject=_str_or_none(d.get("subject")),
         body=_str_or_none(d.get("body")),
         received_at=_str_or_none(d.get("received_at")),
+        read_at=_str_or_none(d.get("read_at")),
+        is_read=bool(d.get("is_read")),
+        raw=dict(d),
+    )
+
+
+def _map_messages_page(d: Dict[str, Any]) -> EmailMessagesPage:
+    messages_raw = d.get("messages")
+    messages = (
+        [_map_message(m) for m in messages_raw if isinstance(m, dict)]
+        if isinstance(messages_raw, list)
+        else []
+    )
+    return EmailMessagesPage(
+        messages=messages,
+        page=_int(d.get("page"), 1),
+        per_page=_int(d.get("per_page"), 20),
+        total=_int(d.get("total"), 0),
+        has_more=bool(d.get("has_more")),
         raw=dict(d),
     )
 

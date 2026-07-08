@@ -141,6 +141,62 @@ class EmailInboxTests(unittest.TestCase):
         self.assertEqual(addr.messages[0].from_, "noreply@x.com")
         self.assertEqual(addr.messages[0].subject, "Code: 12345")
 
+    def test_list_include_released_true_sends_param(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"data": {"emails": []}})
+        ])
+        client = _client(session)
+        client.emails.list(include_released=True)
+        self.assertEqual(session.calls[0][2]["params"], {"include_released": "1"})
+
+    def test_list_include_released_false_omits_param(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"data": {"emails": []}})
+        ])
+        client = _client(session)
+        client.emails.list()
+        # Empty params are cleaned to None before hitting the session.
+        self.assertIsNone(session.calls[0][2]["params"])
+
+    def test_messages_sends_pagination_and_decodes(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"data": {
+                "messages": [
+                    {"id": "m1", "from": "noreply@x.com", "subject": "Code: 12345",
+                     "body": "<b>12345</b>", "received_at": "2026-07-01T10:00:00+00:00",
+                     "read_at": None, "is_read": False},
+                ],
+                "page": 2, "per_page": 10, "total": 15, "has_more": False,
+            }})
+        ])
+        client = _client(session)
+        page = client.emails.messages("e1", page=2, per_page=10)
+
+        method, url, kwargs = session.calls[0]
+        self.assertEqual(method, "GET")
+        self.assertEqual(url, "https://api.example.test/api/account/emails/e1/messages")
+        self.assertEqual(kwargs["params"], {"page": 2, "per_page": 10})
+        self.assertEqual(page.page, 2)
+        self.assertEqual(page.per_page, 10)
+        self.assertEqual(page.total, 15)
+        self.assertFalse(page.has_more)
+        self.assertEqual(len(page.messages), 1)
+        self.assertEqual(page.messages[0].id, "m1")
+        self.assertEqual(page.messages[0].from_, "noreply@x.com")
+        self.assertFalse(page.messages[0].is_read)
+
+    def test_mark_read_posts_and_decodes(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"id": "m1", "read": True})
+        ])
+        client = _client(session)
+        res = client.emails.mark_read("e1", "m1")
+
+        method, url, _ = session.calls[0]
+        self.assertEqual(method, "POST")
+        self.assertEqual(url, "https://api.example.test/api/account/emails/e1/messages/m1/read")
+        self.assertEqual(res, {"id": "m1", "read": True})
+
     def test_delete_soft_cancels(self) -> None:
         session = _FakeSession([
             _FakeResponse(200, {"data": {"uuid": "e1", "address": "abc@evs.io",

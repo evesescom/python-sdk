@@ -113,6 +113,12 @@ client.proxies.reset_sessions()                     # rotate residential sticky-
 # Targeting + usage.
 client.proxies.locations(type="residential")        # {type, geo} / {type, products}
 client.proxies.usage(from_="2026-06-01", to="2026-06-30")
+
+# Connection endpoints — targeting regions, ports per protocol, protocols.
+endpoints = client.proxies.endpoints()
+print(endpoints.regions)        # [{"code": "auto", "host": …, "label": …}, …]
+print(endpoints.ports["http"])  # [12321, 11200]
+print(endpoints.protocols)      # ["http", "socks5"]
 ```
 
 ## Web Unblocker
@@ -150,10 +156,20 @@ quote   = client.emails.quote(domain="evs.io", provider="hero")
 
 addr = client.emails.purchase(domain="evs.io", idempotency_key="my-uuid")
 
+# Rented addresses; pass include_released=True to also list cancelled ones.
+addresses = client.emails.list(include_released=True)
+
 # Poll the address to sync + read messages.
 inbox = client.emails.get(addr.uuid)
 for msg in inbox.messages:
     print(msg.from_, msg.subject, msg.body)  # body may be text or HTML
+
+# Paginated messages + mark one read.
+page = client.emails.messages(addr.uuid, page=1, per_page=20)
+print(page.total, page.has_more)
+for msg in page.messages:
+    print(msg.id, msg.from_, msg.is_read)
+client.emails.mark_read(addr.uuid, page.messages[0].id)  # → {"id": …, "read": True}
 
 addr = client.emails.delete(addr.uuid)  # soft cancel, no refund → status "cancelled"
 ```

@@ -106,6 +106,32 @@ class ProxyPackagesTests(unittest.TestCase):
         self.assertEqual(res.currency, "USD")
 
 
+class ProxyEndpointsTests(unittest.TestCase):
+    def test_endpoints_decodes_regions_ports_protocols(self) -> None:
+        session = _FakeSession([
+            _FakeResponse(200, {"data": {
+                "regions": [
+                    {"code": "auto", "host": "proxy.eveses.com", "label": "Automatic (nearest)"},
+                    {"code": "us", "host": "us.proxy.eveses.com", "label": "United States"},
+                ],
+                "ports": {"http": [12321, 11200], "socks5": [32325, 51200]},
+                "protocols": ["http", "socks5"],
+            }})
+        ])
+        client = _client(session)
+        res = client.proxies.endpoints()
+
+        method, url, _ = session.calls[0]
+        self.assertEqual(method, "GET")
+        self.assertEqual(url, "https://api.example.test/api/account/proxies/endpoints")
+        self.assertEqual(len(res.regions), 2)
+        self.assertEqual(res.regions[0]["code"], "auto")
+        self.assertEqual(res.ports["http"], [12321, 11200])
+        self.assertEqual(res.ports["socks5"], [32325, 51200])
+        self.assertEqual(res.protocols, ["http", "socks5"])
+        self.assertEqual(res.raw["protocols"], ["http", "socks5"])
+
+
 class ProxyQuoteTests(unittest.TestCase):
     def test_quote_residential_sends_params_and_decodes(self) -> None:
         session = _FakeSession([

@@ -117,6 +117,16 @@ class StaticCatalogResponse:
 
 
 @dataclass
+class ProxyEndpoints:
+    """Connection endpoints — targeting regions, ports per protocol, protocols."""
+
+    regions: List[Dict[str, Any]] = field(default_factory=list)
+    ports: Dict[str, List[int]] = field(default_factory=dict)
+    protocols: List[str] = field(default_factory=list)
+    raw: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class ProxyQuote:
     """Public quote — fields vary by ``type``; the full map is on ``.raw``."""
 
@@ -204,6 +214,14 @@ class Proxies:
         return _unwrap(self._client.request(
             "GET", "/api/account/proxies/locations", params={"type": type},
         ))
+
+    def endpoints(self) -> ProxyEndpoints:
+        """
+        Connection endpoints — targeting ``regions``, ``ports`` per protocol,
+        and supported ``protocols``.
+        """
+        d = _unwrap(self._client.request("GET", "/api/account/proxies/endpoints"))
+        return _map_endpoints(d)
 
     def usage(self, *, from_: Optional[str] = None, to: Optional[str] = None) -> Dict[str, Any]:
         """Residential usage timeline. Dates are ``YYYY-MM-DD``; both optional."""
@@ -388,6 +406,25 @@ def _map_location(d: Dict[str, Any]) -> StaticLocation:
         id=_int_or_none(d.get("id")),
         name=_str_or_none(d.get("name")),
         out_of_stock=bool(d.get("out_of_stock")),
+        raw=dict(d),
+    )
+
+
+def _map_endpoints(d: Dict[str, Any]) -> ProxyEndpoints:
+    regions_raw = d.get("regions")
+    regions = [r for r in regions_raw if isinstance(r, dict)] if isinstance(regions_raw, list) else []
+    ports_raw = d.get("ports")
+    ports: Dict[str, List[int]] = {}
+    if isinstance(ports_raw, dict):
+        for k, v in ports_raw.items():
+            if isinstance(v, list):
+                ports[str(k)] = [p for p in v if isinstance(p, int) and not isinstance(p, bool)]
+    protocols_raw = d.get("protocols")
+    protocols = [p for p in protocols_raw if isinstance(p, str)] if isinstance(protocols_raw, list) else []
+    return ProxyEndpoints(
+        regions=regions,
+        ports=ports,
+        protocols=protocols,
         raw=dict(d),
     )
 

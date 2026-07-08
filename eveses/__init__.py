@@ -30,6 +30,7 @@ from .emails import (
     EmailDomain,
     EmailDomainsResponse,
     EmailMessage,
+    EmailMessagesPage,
     EmailQuote,
     Emails,
 )
@@ -44,6 +45,7 @@ from .exceptions import (
 )
 from .proxies import (
     Proxies,
+    ProxyEndpoints,
     ProxyOrder,
     ProxyOverview,
     ProxyQuote,
@@ -89,6 +91,7 @@ __all__ = [
     "ProxyOrder",
     "ProxySubscription",
     "ProxyQuote",
+    "ProxyEndpoints",
     "ResidentialAccess",
     "ResidentialPackage",
     "ResidentialPackagesResponse",
@@ -105,6 +108,7 @@ __all__ = [
     "WebUnblockerQuote",
     "EmailAddress",
     "EmailMessage",
+    "EmailMessagesPage",
     "EmailDomain",
     "EmailDomainsResponse",
     "EmailQuote",
