@@ -16,6 +16,7 @@ Webhook verification:
 """
 
 from .activations import Activations, Order, OrderSms, OrderSmsBundle
+from .captcha import Captcha, CaptchaSolution
 from .catalog import (
     Catalog,
     CatalogCountriesResponse,
@@ -25,15 +26,11 @@ from .catalog import (
     CatalogServicesResponse,
 )
 from .client import Eveses
-from .emails import (
-    EmailAddress,
-    EmailDomain,
-    EmailDomainsResponse,
-    EmailMessage,
-    EmailMessagesPage,
-    EmailQuote,
-    Emails,
-)
+from .emails import Emails
+from .fingerprints import Fingerprint, Fingerprints
+from .proxy import Proxy, ProxyList, ProxyOrder, ProxySubscription
+from .trial import Trial
+from .web_unblocker import WebUnblocker
 from .exceptions import (
     EvesesAuthError,
     EvesesError,
@@ -43,75 +40,33 @@ from .exceptions import (
     EvesesServerError,
     EvesesValidationError,
 )
-from .proxies import (
-    Proxies,
-    ProxyEndpoints,
-    ProxyOrder,
-    ProxyOverview,
-    ProxyQuote,
-    ProxySubscription,
-    ResidentialAccess,
-    ResidentialPackage,
-    ResidentialPackagesResponse,
-    StaticCatalogResponse,
-    StaticLocation,
-    StaticPlan,
-    StaticProduct,
-)
 from .wallet import Wallet, WalletBalance
-from .web_unblocker import (
-    WebUnblocker,
-    WebUnblockerAccess,
-    WebUnblockerOrder,
-    WebUnblockerOverview,
-    WebUnblockerPackage,
-    WebUnblockerPackagesResponse,
-    WebUnblockerQuote,
-    WebUnblockerSubscription,
-)
 from .webhooks import Webhooks, verify_webhook
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Eveses",
     "Activations",
+    "Captcha",
+    "CaptchaSolution",
     "Catalog",
-    "Wallet",
-    "Proxies",
-    "WebUnblocker",
     "Emails",
+    "Fingerprint",
+    "Fingerprints",
+    "Proxy",
+    "ProxyList",
+    "ProxyOrder",
+    "ProxySubscription",
+    "Trial",
+    "Wallet",
+    "WebUnblocker",
     "Webhooks",
     "verify_webhook",
     "Order",
     "OrderSms",
     "OrderSmsBundle",
     "WalletBalance",
-    "ProxyOverview",
-    "ProxyOrder",
-    "ProxySubscription",
-    "ProxyQuote",
-    "ProxyEndpoints",
-    "ResidentialAccess",
-    "ResidentialPackage",
-    "ResidentialPackagesResponse",
-    "StaticProduct",
-    "StaticPlan",
-    "StaticLocation",
-    "StaticCatalogResponse",
-    "WebUnblockerOverview",
-    "WebUnblockerAccess",
-    "WebUnblockerOrder",
-    "WebUnblockerSubscription",
-    "WebUnblockerPackage",
-    "WebUnblockerPackagesResponse",
-    "WebUnblockerQuote",
-    "EmailAddress",
-    "EmailMessage",
-    "EmailMessagesPage",
-    "EmailDomain",
-    "EmailDomainsResponse",
-    "EmailQuote",
     "CatalogCountriesResponse",
     "CatalogServicesResponse",
     "CatalogPricingResponse",

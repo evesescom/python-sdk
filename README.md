@@ -2,7 +2,8 @@
 
 Official Python SDK for the [Eveses](https://eveses.com) developer API.
 Activations, wallet, catalog (countries / services / pricing), proxies,
-web unblocker, emails, and webhook signature verification.
+web-unblocker, temporary emails, free trials, captcha-solving, browser
+fingerprints, and webhook signature verification.
 
 ## Install
 
@@ -76,102 +77,119 @@ pricing   = client.catalog.pricing(mode="activation", country="ua", service="tel
 
 ## Proxies
 
-Buy and manage residential (metered, GB) and static (per-IP) proxies. Money is
-always integer cents; `currency` is `"USD"`. Quote / catalog objects preserve
-the raw wire map under `.raw`.
+Buy and manage residential (metered, per-GB) and static (per-IP: ISP /
+datacenter / IPv6 / sneaker / mobile) proxies. The upstream provider stays
+invisible — connection details come back on the white-label host. Hits
+`/api/account/proxies/*`.
 
 ```python
-# What the user already has: residential connection + subscription + orders.
-overview = client.proxies.list()
-if overview.residential:
-    print(overview.residential.curl)  # ready-to-run curl under the white-label host
+# Browse
+client.proxy.packages()                       # residential GB ladder
+client.proxy.endpoints()                       # white-label subdomains + ports
+client.proxy.catalog()                         # static per-IP products/plans
+client.proxy.locations(type="residential")     # available targeting
+client.proxy.quote(type="residential", gb=5)   # estimate before buying
 
-# Package ladder + per-IP catalogue (products / plans / locations).
-packages = client.proxies.packages().packages
-catalog  = client.proxies.catalog().products   # plan.price_cents == None → call quote()
-
-# Quote before buying — residential (GB) or a static selection.
-q = client.proxies.quote(type="residential", gb=5, subscription=True)
-q = client.proxies.quote(type="isp", product_id=1, plan_id=2, location_id=3, quantity=2)
-print(q.price_cents)
-
-# Purchase (Idempotency-Key sent when idempotency_key is provided).
-order = client.proxies.purchase(type="residential", gb=5, idempotency_key="my-uuid")
-order = client.proxies.purchase(
-    type="isp", product_id=1, plan_id=2, location_id=3, quantity=2,
+# Buy
+order = client.proxy.purchase(
+    type="residential",
+    gb=5,
+    subscription=False,          # start a monthly residential subscription
     idempotency_key="my-uuid",
 )
+# static per-IP:
+# client.proxy.purchase(type="isp", product_id=1, plan_id=2, location_id=3, quantity=2)
 
-# Manage.
-client.proxies.extend(order.uuid, days=30)          # static per-IP orders only
-client.proxies.set_auto_renew(order.uuid, True)     # toggle auto_extend
-client.proxies.subscription_cancel()                # residential subscription
-client.proxies.subscription_pause()
-client.proxies.subscription_resume()
-client.proxies.reset_sessions()                     # rotate residential sticky-session IPs
+# Manage
+listing = client.proxy.list()                  # residential + subscription + orders
+client.proxy.usage(from_="2026-06-01", to="2026-06-24")
+client.proxy.extend(order.uuid, days=30)        # static per-IP order
+client.proxy.auto_renew(order.uuid, enabled=True)
+client.proxy.reset_sessions()                   # rotate residential sticky sessions
+client.proxy.trial()                            # one-time proxy free trial
 
-# Targeting + usage.
-client.proxies.locations(type="residential")        # {type, geo} / {type, products}
-client.proxies.usage(from_="2026-06-01", to="2026-06-30")
-
-# Connection endpoints — targeting regions, ports per protocol, protocols.
-endpoints = client.proxies.endpoints()
-print(endpoints.regions)        # [{"code": "auto", "host": …, "label": …}, …]
-print(endpoints.ports["http"])  # [12321, 11200]
-print(endpoints.protocols)      # ["http", "socks5"]
+# Residential subscription
+client.proxy.subscription_pause()
+client.proxy.subscription_resume()
+client.proxy.subscription_cancel()
 ```
 
 ## Web Unblocker
 
-An anti-bot scraping endpoint billed per successful request (a separate product
-from proxies).
+Buy and manage a web-unblocker subscription (metered by request count). Hits
+`/api/account/web-unblocker/*`.
 
 ```python
-overview = client.web_unblocker.list()
-if overview.access:
-    print(overview.access.requests_remaining)
+client.web_unblocker.packages()
+client.web_unblocker.quote(10_000, subscription=False)
+client.web_unblocker.access()                   # credentials + endpoints
 
-packages = client.web_unblocker.packages().packages
-quote    = client.web_unblocker.quote(requests=10_000)
-print(quote.price_cents, quote.per_1k_cents)
+client.web_unblocker.purchase(10_000, subscription=False, idempotency_key="my-uuid")
+client.web_unblocker.trial()                    # one-time free trial
 
-order = client.web_unblocker.purchase(
-    requests=10_000, subscription=False, idempotency_key="my-uuid",
-)
-
-client.web_unblocker.subscription_cancel()
 client.web_unblocker.subscription_pause()
 client.web_unblocker.subscription_resume()
+client.web_unblocker.subscription_cancel()
 ```
 
 ## Emails
 
-Rent an inbox address (our own catch-all domains, or a reseller) and read its
-mail. Fetching a single address (`get`) also live-syncs reseller inboxes — poll
-it to receive new mail.
+Buy and manage temporary email addresses and browse received messages. Hits
+`/api/account/emails/*`.
 
 ```python
-domains = client.emails.domains(site="facebook.com").domains  # `site` for resellers
-quote   = client.emails.quote(domain="evs.io", provider="hero")
+client.emails.domains(site="example.com")
+client.emails.quote("mail.example", provider="…")
 
-addr = client.emails.purchase(domain="evs.io", idempotency_key="my-uuid")
+box = client.emails.purchase("mail.example", idempotency_key="my-uuid")
+uuid = box["uuid"]
 
-# Rented addresses; pass include_released=True to also list cancelled ones.
-addresses = client.emails.list(include_released=True)
+client.emails.list(include_released=False)
+client.emails.get(uuid)
+client.emails.messages(uuid, page=1, per_page=20)
+client.emails.mark_read(uuid, message_id=123)
+client.emails.release(uuid)                      # delete the address
+```
 
-# Poll the address to sync + read messages.
-inbox = client.emails.get(addr.uuid)
-for msg in inbox.messages:
-    print(msg.from_, msg.subject, msg.body)  # body may be text or HTML
+## Trial
 
-# Paginated messages + mark one read.
-page = client.emails.messages(addr.uuid, page=1, per_page=20)
-print(page.total, page.has_more)
-for msg in page.messages:
-    print(msg.id, msg.from_, msg.is_read)
-client.emails.mark_read(addr.uuid, page.messages[0].id)  # → {"id": …, "read": True}
+Query and activate free-trial access for individual services. Hits
+`/api/account/trial/*`.
 
-addr = client.emails.delete(addr.uuid)  # soft cancel, no refund → status "cancelled"
+```python
+client.trial.status()                            # eligibility / used / expires_at
+client.trial.subscribe(["telegram", "whatsapp"])
+```
+
+## Captcha
+
+Resells 2captcha, billed pay-per-use from the wallet (count-on-success). The
+`solve` call is blocking: it submits the task then polls the result endpoint —
+honouring the API's `retry_after` — until the task is ready. Hits
+`/api/account/captcha/*`.
+
+```python
+solution = client.captcha.solve(
+    "recaptcha_v2",
+    {"sitekey": "…", "pageurl": "https://example.com"},
+    idempotency_key="my-uuid",
+    timeout_sec=180,
+)
+print(solution.solution, solution.price_micro_usd)
+# raises EvesesError on failure or timeout
+```
+
+## Fingerprints
+
+Resells 2captcha's Fingerprint API, billed pay-per-use (count-on-success).
+Unlike captcha-solving this is synchronous — one request returns a complete
+fingerprint. Hits `/api/account/fingerprints/*`.
+
+```python
+fp = client.fingerprints.generate({"os": "windows", "browser": "chrome"})
+print(fp.fingerprint, fp.price_micro_usd)
+
+rand = client.fingerprints.random()
 ```
 
 ## Webhook verification
@@ -269,6 +287,31 @@ client = Eveses(
 pip install -e '.[dev]'
 python -m unittest discover -s tests
 ```
+
+## Changelog
+
+### 0.3.0
+
+- New `proxy` namespace: residential (per-GB) and static per-IP proxies —
+  `packages`, `endpoints`, `catalog`, `locations`, `quote`, `usage`, `list`,
+  `purchase`, `extend`, `auto_renew`, `reset_sessions`, `trial`, and residential
+  subscription `pause`/`resume`/`cancel`. Exposes `Proxy`, `ProxyOrder`,
+  `ProxySubscription`, `ProxyList`.
+- New `web_unblocker` namespace: `packages`, `quote`, `access`, `purchase`,
+  `trial`, and subscription `pause`/`resume`/`cancel`.
+- New `emails` namespace: temporary email addresses — `domains`, `quote`,
+  `list`, `get`, `messages`, `purchase`, `mark_read`, `release`.
+- New `trial` namespace: `status` and `subscribe` for per-service free trials.
+- New `captcha` namespace: blocking `solve` (submit + poll) reselling 2captcha,
+  billed pay-per-use. Exposes `Captcha`, `CaptchaSolution`.
+- New `fingerprints` namespace: synchronous `generate` / `random` browser
+  fingerprints. Exposes `Fingerprints`, `Fingerprint`.
+- Module reorg: the old `proxies` module was replaced by `proxy`.
+
+### 0.2.0
+
+- Activations, wallet, catalog (countries / services / pricing), and webhook
+  signature verification.
 
 ## License
 
