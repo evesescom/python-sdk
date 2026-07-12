@@ -1,6 +1,6 @@
 """
 Captcha-solving namespace. Resells 2captcha, billed pay-per-use from the wallet
-(count-on-success). Hits `/api/account/captcha/*`.
+(count-on-success). Hits `/api/v1/captcha/*`.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ class Captcha:
 
         started = self._client.request(
             "POST",
-            "/api/account/captcha/solve",
+            "/api/v1/captcha/solve",
             json_body=body,
             headers=headers or None,
         )
@@ -77,7 +77,7 @@ class Captcha:
 
             res = self._client.request(
                 "GET",
-                f"/api/account/captcha/result/{task_id}",
+                f"/api/v1/captcha/result/{task_id}",
             )
             res = res if isinstance(res, dict) else {}
             retry_after = int(res.get("retry_after") or retry_after)
@@ -88,6 +88,37 @@ class Captcha:
 
             if time.time() >= deadline:
                 raise EvesesError(f"Captcha task {task_id} timed out before resolving", 0)
+
+    def result(self, task_id: int) -> Dict[str, Any]:
+        """Fetch the current state of a solve task (single, non-blocking poll)."""
+        res = self._client.request("GET", f"/api/v1/captcha/result/{task_id}")
+        return res if isinstance(res, dict) else {}
+
+    def rates(self) -> Dict[str, Any]:
+        """Per-solve retail rates by captcha type."""
+        res = self._client.request("GET", "/api/v1/captcha/rates")
+        return res if isinstance(res, dict) else {}
+
+    def usage(
+        self,
+        *,
+        status: Optional[str] = None,
+        type: Optional[str] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Captcha task history (cursor-paginated). Replaces any "orders" notion."""
+        params: Dict[str, Any] = {}
+        if status is not None:
+            params["status"] = status
+        if type is not None:
+            params["type"] = type
+        if cursor is not None:
+            params["cursor"] = cursor
+        if limit is not None:
+            params["limit"] = limit
+        res = self._client.request("GET", "/api/v1/captcha/usage", params=params or None)
+        return res if isinstance(res, dict) else {}
 
     def _finalise(
         self,

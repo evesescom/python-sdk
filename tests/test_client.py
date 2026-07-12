@@ -84,7 +84,7 @@ class ActivationsTests(unittest.TestCase):
         ])
         client = Eveses(api_key="sk_test", base_url="https://api.example.test", session=session)
 
-        order = client.activations.create(
+        order = client.numbers.create(
             country="ua",
             service="telegram",
             idempotency_key="idem-1",
@@ -94,7 +94,7 @@ class ActivationsTests(unittest.TestCase):
         self.assertEqual(len(session.calls), 1)
         method, url, kwargs = session.calls[0]
         self.assertEqual(method, "POST")
-        self.assertEqual(url, "https://api.example.test/api/account/orders")
+        self.assertEqual(url, "https://api.example.test/api/v1/numbers/orders")
         headers = kwargs["headers"]
         self.assertEqual(headers["Authorization"], "Bearer sk_test")
         self.assertEqual(headers["Idempotency-Key"], "idem-1")
@@ -122,7 +122,7 @@ class ActivationsTests(unittest.TestCase):
         ])
         client = Eveses(api_key="k", base_url="https://x.test", session=session)
         with patch("eveses.client.time.sleep"):  # don't actually sleep in tests
-            order = client.activations.get("X")
+            order = client.numbers.get("X")
         self.assertEqual(len(session.calls), 2)
         self.assertEqual(order.order_id, "X")
 
@@ -145,7 +145,7 @@ class ActivationsTests(unittest.TestCase):
         ])
         client = Eveses(api_key="k", base_url="https://x.test", session=session)
         with self.assertRaises(EvesesValidationError) as ctx:
-            client.activations.create(country="", service="telegram")
+            client.numbers.create(country="", service="telegram")
         self.assertEqual(ctx.exception.status, 422)
         self.assertEqual(ctx.exception.errors, {"country": ["required"]})
 

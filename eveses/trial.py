@@ -1,6 +1,6 @@
 """
 Trial namespace. Query and subscribe to free-trial access for individual
-services. Hits `/api/account/trial/*`.
+services. Hits `/api/v1/trial/*`.
 """
 
 from __future__ import annotations
@@ -17,14 +17,14 @@ class Trial:
 
     def status(self) -> Dict[str, Any]:
         """Return the trial status for all services (eligibility, used, expires_at)."""
-        res = self._client.request("GET", "/api/account/trial")
+        res = self._client.request("GET", "/api/v1/trial")
         return res if isinstance(res, dict) else {}
 
     def subscribe(self, services: List[str]) -> Dict[str, Any]:
         """Activate free-trial access for the given service slugs."""
         res = self._client.request(
             "POST",
-            "/api/account/trial/subscribe",
+            "/api/v1/trial/subscribe",
             json_body={"services": services},
         )
         return res if isinstance(res, dict) else {}

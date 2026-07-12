@@ -59,7 +59,7 @@ class ProxyTests(unittest.TestCase):
 
         method, url, kwargs = session.calls[0]
         self.assertEqual(method, "POST")
-        self.assertEqual(url, "https://x.test/api/account/proxies/purchase")
+        self.assertEqual(url, "https://x.test/api/v1/proxy/orders")
         self.assertEqual(kwargs["headers"]["Idempotency-Key"], "idem-px")
         self.assertEqual(json.loads(kwargs["data"]), {"type": "residential", "gb": 10, "subscription": True})
 
@@ -89,7 +89,7 @@ class ProxyTests(unittest.TestCase):
         quote = client.proxy.quote(type="residential", gb=10, subscription=True)
 
         method, url, kwargs = session.calls[0]
-        self.assertEqual(url, "https://x.test/api/account/proxies/quote")
+        self.assertEqual(url, "https://x.test/api/v1/proxy/quote")
         self.assertEqual(kwargs["params"], {"type": "residential", "gb": 10, "subscription": "true"})
         self.assertEqual(quote["price_cents"], 900)
 
@@ -116,11 +116,11 @@ class ProxyTests(unittest.TestCase):
         ])
 
         client.proxy.extend("px_1", 30)
-        self.assertEqual(session.calls[0][1], "https://x.test/api/account/proxies/px_1/extend")
+        self.assertEqual(session.calls[0][1], "https://x.test/api/v1/proxy/orders/px_1/extend")
         self.assertEqual(json.loads(session.calls[0][2]["data"]), {"days": 30})
 
         order = client.proxy.auto_renew("px_1", True)
-        self.assertEqual(session.calls[1][1], "https://x.test/api/account/proxies/px_1/auto-renew")
+        self.assertEqual(session.calls[1][1], "https://x.test/api/v1/proxy/orders/px_1/auto-renew")
         self.assertEqual(json.loads(session.calls[1][2]["data"]), {"enabled": True})
         self.assertTrue(order.auto_extend)
 
@@ -130,7 +130,7 @@ class ProxyTests(unittest.TestCase):
         ])
         sub = client.proxy.subscription_pause()
         self.assertEqual(session.calls[0][0], "POST")
-        self.assertEqual(session.calls[0][1], "https://x.test/api/account/proxies/subscription/pause")
+        self.assertEqual(session.calls[0][1], "https://x.test/api/v1/proxy/subscription/pause")
         self.assertEqual(sub.status, "paused")
 
 

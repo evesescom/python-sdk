@@ -5,9 +5,9 @@ Quickstart:
 
     from eveses import Eveses
     client = Eveses(api_key="sk_…")
-    order = client.activations.create(country="ua", service="telegram")
+    order = client.numbers.create(country="ua", service="telegram")
     wallet = client.wallet.balance()
-    services = client.catalog.services(mode="activation", country="ua")
+    services = client.numbers.services(mode="activation", country="ua")
 
 Webhook verification:
 
@@ -15,20 +15,25 @@ Webhook verification:
     ok = Webhooks.verify(raw_body, signature_header, secret, timestamp=ts_header)
 """
 
-from .activations import Activations, Order, OrderSms, OrderSmsBundle
 from .captcha import Captcha, CaptchaSolution
-from .catalog import (
-    Catalog,
+from .client import Eveses
+from .emails import Emails
+from .me import Me, MeProfile
+from .numbers import (
     CatalogCountriesResponse,
     CatalogPricingDuration,
     CatalogPricingResponse,
     CatalogServiceWithDurations,
     CatalogServicesResponse,
+    Numbers,
+    Order,
+    OrderSms,
+    OrderSmsBundle,
 )
-from .client import Eveses
-from .emails import Emails
-from .fingerprints import Fingerprint, Fingerprints
+from .orders import Orders
+from .pricing import Pricing
 from .proxy import Proxy, ProxyList, ProxyOrder, ProxySubscription
+from .quotas import Quotas
 from .trial import Trial
 from .web_unblocker import WebUnblocker
 from .exceptions import (
@@ -43,21 +48,23 @@ from .exceptions import (
 from .wallet import Wallet, WalletBalance
 from .webhooks import Webhooks, verify_webhook
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "Eveses",
-    "Activations",
+    "Numbers",
     "Captcha",
     "CaptchaSolution",
-    "Catalog",
     "Emails",
-    "Fingerprint",
-    "Fingerprints",
+    "Me",
+    "MeProfile",
+    "Orders",
+    "Pricing",
     "Proxy",
     "ProxyList",
     "ProxyOrder",
     "ProxySubscription",
+    "Quotas",
     "Trial",
     "Wallet",
     "WebUnblocker",

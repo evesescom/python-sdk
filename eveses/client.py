@@ -27,7 +27,7 @@ from .exceptions import (
 
 DEFAULT_BASE_URL = "https://api.eveses.io"
 DEFAULT_TIMEOUT_S = 30.0
-DEFAULT_USER_AGENT = "eveses-python/0.3.0"
+DEFAULT_USER_AGENT = "eveses-python/0.4.0"
 
 
 class Eveses:
@@ -37,7 +37,7 @@ class Eveses:
     Example:
         from eveses import Eveses
         client = Eveses(api_key=os.environ["EVESES_API_KEY"])
-        order = client.activations.create(country="ua", service="telegram")
+        order = client.numbers.create(country="ua", service="telegram")
     """
 
     def __init__(
@@ -60,24 +60,28 @@ class Eveses:
         self._default_headers = dict(default_headers or {})
 
         # Lazy import to avoid circular references at module-import time.
-        from .activations import Activations
         from .captcha import Captcha
-        from .catalog import Catalog
         from .emails import Emails
-        from .fingerprints import Fingerprints
+        from .me import Me
+        from .numbers import Numbers
+        from .orders import Orders
+        from .pricing import Pricing
         from .proxy import Proxy
+        from .quotas import Quotas
         from .trial import Trial
         from .wallet import Wallet
         from .web_unblocker import WebUnblocker
         from .webhooks import Webhooks
 
-        self.activations = Activations(self)
+        self.numbers = Numbers(self)
         self.wallet = Wallet(self)
-        self.catalog = Catalog(self)
         self.captcha = Captcha(self)
         self.emails = Emails(self)
-        self.fingerprints = Fingerprints(self)
+        self.me = Me(self)
+        self.orders = Orders(self)
+        self.pricing = Pricing(self)
         self.proxy = Proxy(self)
+        self.quotas = Quotas(self)
         self.trial = Trial(self)
         self.web_unblocker = WebUnblocker(self)
         # Static-like helper. Also importable as `from eveses import Webhooks`.

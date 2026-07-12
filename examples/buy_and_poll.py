@@ -70,7 +70,7 @@ def poll_for_sms(client: Eveses, order: Order) -> OrderSms | None:
     """
     deadline = time.monotonic() + POLL_TIMEOUT_S
     while time.monotonic() < deadline:
-        bundle = client.activations.sms(order.order_id)
+        bundle = client.numbers.sms(order.order_id)
         messages = collect_all_sms(bundle.stored, bundle.fresh)
         if messages:
             return messages[0]
@@ -87,7 +87,7 @@ def main() -> None:
     order: Order | None = None
 
     try:
-        order = client.activations.create(
+        order = client.numbers.create(
             country=COUNTRY,
             service=SERVICE,
             idempotency_key=str(uuid.uuid4()),
@@ -98,11 +98,11 @@ def main() -> None:
         sms = poll_for_sms(client, order)
         if sms is None:
             print("Timed out waiting for SMS — cancelling and refunding held balance.")
-            client.activations.cancel(order.order_id)
+            client.numbers.cancel(order.order_id)
             return
 
         print(f"Got SMS from {sms.sender or 'unknown'}: {sms.text!r}")
-        finished = client.activations.finish(order.order_id)
+        finished = client.numbers.finish(order.order_id)
         print(f"Order {finished.order_id} finished (status={finished.status}).")
 
     except KeyboardInterrupt:
@@ -111,7 +111,7 @@ def main() -> None:
         print("\nCancellation requested — releasing the number…")
         if order is not None:
             try:
-                client.activations.cancel(order.order_id)
+                client.numbers.cancel(order.order_id)
                 print("Cancelled cleanly.")
             except EvesesNotFoundError:
                 # The order may already have moved to a terminal state

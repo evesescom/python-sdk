@@ -1,7 +1,7 @@
 """
 Proxy namespace. Buy and manage residential (metered, per-GB) and static
 (per-IP: ISP / datacenter / IPv6 / sneaker / mobile) proxies. Hits
-`/api/account/proxies/*`.
+`/api/v1/proxy/*`.
 
 The provider stays invisible: connection details are returned under the
 white-label host.
@@ -56,24 +56,20 @@ class Proxy:
         self._client = client
 
     # ------------------------------------------------------------------ read --
-    def packages(self) -> Dict[str, Any]:
-        """Residential GB package ladder (price, per-GB, discount)."""
-        return self._get("/api/account/proxies/packages")
+    def pricing(self) -> Dict[str, Any]:
+        """All proxy prices: residential GB ladder + static per-IP catalogue."""
+        return self._get("/api/v1/proxy/pricing")
 
     def endpoints(self) -> Dict[str, Any]:
         """White-label connection endpoints: regional subdomains + HTTP/SOCKS5 ports."""
-        return self._get("/api/account/proxies/endpoints")
-
-    def catalog(self) -> Dict[str, Any]:
-        """Static (per-IP) catalogue — products/plans/locations with user prices."""
-        return self._get("/api/account/proxies/catalog")
+        return self._get("/api/v1/proxy/endpoints")
 
     def locations(self, type: str = "residential") -> Dict[str, Any]:
         """
         Available targeting for a proxy type: residential geo (countries/regions/
         sets) or a static family's catalogue locations.
         """
-        return self._get("/api/account/proxies/locations", params={"type": type})
+        return self._get("/api/v1/proxy/locations", params={"type": type})
 
     def quote(
         self,
@@ -97,7 +93,7 @@ class Proxy:
             params["plan_id"] = plan_id
             params["location_id"] = location_id
             params["quantity"] = quantity
-        return self._get("/api/account/proxies/quote", params=params)
+        return self._get("/api/v1/proxy/quote", params=params)
 
     def usage(self, *, from_: Optional[str] = None, to: Optional[str] = None) -> Dict[str, Any]:
         """Residential usage analytics — daily traffic/requests timeline + top hosts."""
@@ -106,11 +102,11 @@ class Proxy:
             params["from"] = from_
         if to is not None:
             params["to"] = to
-        return self._get("/api/account/proxies/usage", params=params or None)
+        return self._get("/api/v1/proxy/usage", params=params or None)
 
     def list(self) -> ProxyList:
         """The user's proxies: residential connection, subscription, per-IP orders."""
-        res = self._client.request("GET", "/api/account/proxies")
+        res = self._client.request("GET", "/api/v1/proxy/orders")
         res = res if isinstance(res, dict) else {}
 
         residential = res.get("residential") if isinstance(res.get("residential"), dict) else None
@@ -120,6 +116,11 @@ class Proxy:
         orders = [self._map_order(o if isinstance(o, dict) else {}) for o in orders_raw]
 
         return ProxyList(residential=residential, subscription=subscription, orders=orders)
+
+    def get(self, order_uuid: str) -> ProxyOrder:
+        """Fetch a single proxy order by UUID."""
+        res = self._client.request("GET", f"/api/v1/proxy/orders/{order_uuid}")
+        return self._map_order(res if isinstance(res, dict) else {})
 
     # ----------------------------------------------------------------- write --
     def purchase(
@@ -155,7 +156,7 @@ class Proxy:
 
         res = self._client.request(
             "POST",
-            "/api/account/proxies/purchase",
+            "/api/v1/proxy/orders",
             json_body=body,
             headers=headers or None,
         )
@@ -165,7 +166,7 @@ class Proxy:
         """Extend a static (per-IP) order for another period (re-charges its price)."""
         res = self._client.request(
             "POST",
-            f"/api/account/proxies/{order_uuid}/extend",
+            f"/api/v1/proxy/orders/{order_uuid}/extend",
             json_body={"days": days},
         )
         return self._map_order(res if isinstance(res, dict) else {})
@@ -174,19 +175,19 @@ class Proxy:
         """Toggle auto-renew (auto_extend) on a per-IP order."""
         res = self._client.request(
             "POST",
-            f"/api/account/proxies/{order_uuid}/auto-renew",
+            f"/api/v1/proxy/orders/{order_uuid}/auto-renew",
             json_body={"enabled": enabled},
         )
         return self._map_order(res if isinstance(res, dict) else {})
 
     def trial(self) -> Dict[str, Any]:
         """Activate the proxy free trial (one-time per account)."""
-        res = self._client.request("POST", "/api/account/proxies/trial")
+        res = self._client.request("POST", "/api/v1/proxy/trial")
         return res if isinstance(res, dict) else {}
 
     def reset_sessions(self) -> Dict[str, Any]:
         """Reset the residential sticky sessions (next request rotates IPs)."""
-        res = self._client.request("POST", "/api/account/proxies/sessions/reset")
+        res = self._client.request("POST", "/api/v1/proxy/sessions/reset")
         return res if isinstance(res, dict) else {}
 
     def subscription_cancel(self) -> ProxySubscription:
@@ -203,7 +204,7 @@ class Proxy:
 
     # --------------------------------------------------------------- helpers --
     def _subscription_action(self, action: str) -> ProxySubscription:
-        res = self._client.request("POST", f"/api/account/proxies/subscription/{action}")
+        res = self._client.request("POST", f"/api/v1/proxy/subscription/{action}")
         return self._map_subscription(res if isinstance(res, dict) else {})
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

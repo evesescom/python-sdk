@@ -1,5 +1,5 @@
 """
-Wallet namespace. Hits `/api/account/wallet`.
+Wallet namespace. Hits `/api/v1/wallet`.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ class Wallet:
 
     def balance(self) -> WalletBalance:
         """Snapshot of total / held / available balance."""
-        res = self._client.request("GET", "/api/account/wallet")
+        res = self._client.request("GET", "/api/v1/wallet")
         d = _unwrap(res)
         return WalletBalance(
             balance=_int(d.get("balance"), 0),

@@ -64,10 +64,10 @@ class CaptchaTests(unittest.TestCase):
 
         method, url, kwargs = session.calls[0]
         self.assertEqual(method, "POST")
-        self.assertEqual(url, "https://x.test/api/account/captcha/solve")
+        self.assertEqual(url, "https://x.test/api/v1/captcha/solve")
         sent = json.loads(kwargs["data"])
         self.assertEqual(sent, {"type": "RecaptchaV2TaskProxyless", "params": {"websiteURL": "x", "websiteKey": "k"}})
-        self.assertEqual(session.calls[1][1], "https://x.test/api/account/captcha/result/7")
+        self.assertEqual(session.calls[1][1], "https://x.test/api/v1/captcha/result/7")
 
     def test_solve_raises_on_failure(self) -> None:
         client, _ = self._client([

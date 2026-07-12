@@ -1,6 +1,6 @@
 """
 Emails namespace. Buy and manage temporary email addresses, browse received
-messages. Hits `/api/account/emails/*`.
+messages. Hits `/api/v1/emails/*`.
 """
 
 from __future__ import annotations
@@ -16,12 +16,12 @@ class Emails:
         self._client = client
 
     # ------------------------------------------------------------------ read --
-    def domains(self, *, site: Optional[str] = None) -> Dict[str, Any]:
-        """List available email domains, optionally filtered by site."""
+    def pricing(self, *, site: Optional[str] = None) -> Dict[str, Any]:
+        """List available email domains + prices (domains under the ``domains`` key)."""
         params: Dict[str, Any] = {}
         if site is not None:
             params["site"] = site
-        return self._get("/api/account/emails/domains", params=params or None)
+        return self._get("/api/v1/emails/pricing", params=params or None)
 
     def quote(
         self,
@@ -36,25 +36,25 @@ class Emails:
             params["site"] = site
         if provider is not None:
             params["provider"] = provider
-        return self._get("/api/account/emails/quote", params=params)
+        return self._get("/api/v1/emails/quote", params=params)
 
     def list(self, *, include_released: bool = False) -> Dict[str, Any]:
         """List owned temporary email addresses."""
         params: Dict[str, Any] = {}
         if include_released:
             params["include_released"] = 1
-        return self._get("/api/account/emails", params=params or None)
+        return self._get("/api/v1/emails/orders", params=params or None)
 
-    def get(self, uuid: str) -> Dict[str, Any]:
-        """Fetch a single email address by UUID."""
-        return self._get(f"/api/account/emails/{uuid}")
+    def get(self, email: str) -> Dict[str, Any]:
+        """Fetch a single email address (inbox metadata)."""
+        return self._get(f"/api/v1/emails/{email}")
 
     def messages(
-        self, uuid: str, *, page: int = 1, per_page: int = 20
+        self, email: str, *, page: int = 1, per_page: int = 20
     ) -> Dict[str, Any]:
         """Paginate received messages for an email address."""
         params: Dict[str, Any] = {"page": page, "per_page": per_page}
-        return self._get(f"/api/account/emails/{uuid}/messages", params=params)
+        return self._get(f"/api/v1/emails/{email}/messages", params=params)
 
     # ----------------------------------------------------------------- write --
     def purchase(
@@ -78,23 +78,23 @@ class Emails:
 
         res = self._client.request(
             "POST",
-            "/api/account/emails/purchase",
+            "/api/v1/emails/orders",
             json_body=body,
             headers=headers or None,
         )
         return res if isinstance(res, dict) else {}
 
-    def mark_read(self, uuid: str, message_id: int) -> Dict[str, Any]:
+    def mark_read(self, email: str, message_id: int) -> Dict[str, Any]:
         """Mark a received message as read."""
         res = self._client.request(
             "POST",
-            f"/api/account/emails/{uuid}/messages/{message_id}/read",
+            f"/api/v1/emails/{email}/messages/{message_id}/read",
         )
         return res if isinstance(res, dict) else {}
 
-    def release(self, uuid: str) -> Dict[str, Any]:
+    def release(self, email: str) -> Dict[str, Any]:
         """Release (delete) a temporary email address."""
-        res = self._client.request("DELETE", f"/api/account/emails/{uuid}")
+        res = self._client.request("DELETE", f"/api/v1/emails/{email}")
         return res if isinstance(res, dict) else {}
 
     # --------------------------------------------------------------- helpers --

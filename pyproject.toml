@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "eveses"
-version = "0.3.0"
-description = "Official Eveses SDK — activations, wallet, catalog, proxies, web-unblocker, emails, trial, captcha, fingerprints, webhooks."
+version = "0.4.0"
+description = "Official Eveses SDK for the /api/v1 surface — numbers, wallet, proxy, web-unblocker, emails, trial, captcha, orders, pricing, quotas, webhooks."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"

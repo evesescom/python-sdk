@@ -58,21 +58,21 @@ def main() -> None:
 
         # The "services" catalog endpoint returns the global product list
         # for the current mode; `country` is informational on v1.
-        services = client.catalog.services(mode="activation", country=COUNTRY)
+        services = client.numbers.services(mode="activation", country=COUNTRY)
         print(f"{len(services.services)} services available in mode={services.mode}")
         if SERVICE not in services.services:
             print(f"Warning: '{SERVICE}' not in catalog — request may 404.")
 
         # The idempotency key MUST be stable across retries of the same
         # intent. uuid4() is fine here because we only call create() once.
-        order = client.activations.create(
+        order = client.numbers.create(
             country=COUNTRY,
             service=SERVICE,
             mode="activation",
             idempotency_key=str(uuid.uuid4()),
         )
         print(f"Created order {order.order_id}: phone={order.phone} status={order.status}")
-        print("Next: poll client.activations.sms(order.order_id) for the code.")
+        print("Next: poll client.numbers.sms(order.order_id) for the code.")
 
     except EvesesAuthError:
         print("Auth failed — check EVESES_API_KEY (must start with sk_).")
