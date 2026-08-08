@@ -71,6 +71,17 @@ class Proxy:
         """
         return self._get("/api/v1/proxy/locations", params={"type": type})
 
+    def locations_detail(self, country: str, type: str = "residential") -> Dict[str, Any]:
+        """
+        Per-country residential state/city/ISP geo drill-down.
+
+        Returns ``{type, country, geo: {country, states: [{code, name, cities?}],
+        cities: [{code, name, isps?}], tokens: {country, city, state, isp}}}``.
+        """
+        return self._get(
+            "/api/v1/proxy/locations/detail", params={"type": type, "country": country}
+        )
+
     def quote(
         self,
         *,

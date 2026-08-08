@@ -27,7 +27,7 @@ from .exceptions import (
 
 DEFAULT_BASE_URL = "https://api.eveses.io"
 DEFAULT_TIMEOUT_S = 30.0
-DEFAULT_USER_AGENT = "eveses-python/0.4.0"
+DEFAULT_USER_AGENT = "eveses-python/0.5.0"
 
 
 class Eveses:
@@ -62,6 +62,7 @@ class Eveses:
         # Lazy import to avoid circular references at module-import time.
         from .captcha import Captcha
         from .emails import Emails
+        from .marketplace import Marketplace
         from .me import Me
         from .numbers import Numbers
         from .orders import Orders
@@ -77,6 +78,7 @@ class Eveses:
         self.wallet = Wallet(self)
         self.captcha = Captcha(self)
         self.emails = Emails(self)
+        self.marketplace = Marketplace(self)
         self.me = Me(self)
         self.orders = Orders(self)
         self.pricing = Pricing(self)

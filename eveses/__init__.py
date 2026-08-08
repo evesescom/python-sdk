@@ -18,6 +18,7 @@ Webhook verification:
 from .captcha import Captcha, CaptchaSolution
 from .client import Eveses
 from .emails import Emails
+from .marketplace import Marketplace
 from .me import Me, MeProfile
 from .numbers import (
     CatalogCountriesResponse,
@@ -48,7 +49,7 @@ from .exceptions import (
 from .wallet import Wallet, WalletBalance
 from .webhooks import Webhooks, verify_webhook
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "Eveses",
@@ -56,6 +57,7 @@ __all__ = [
     "Captcha",
     "CaptchaSolution",
     "Emails",
+    "Marketplace",
     "Me",
     "MeProfile",
     "Orders",
