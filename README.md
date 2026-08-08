@@ -3,8 +3,8 @@
 Official Python SDK for the [Eveses](https://eveses.com) developer API, built
 for the versioned `/api/v1` surface. Numbers (SMS activations/rentals + catalog),
 wallet, proxies, web-unblocker, temporary emails, free trials, captcha-solving,
-a unified orders feed, aggregate pricing / quotas, the `me` principal, and
-webhook signature verification.
+a provider-agnostic marketplace, a unified orders feed, aggregate pricing /
+quotas, the `me` principal, and webhook signature verification.
 
 ## Install
 
@@ -314,6 +314,18 @@ python -m pytest
 ```
 
 ## Changelog
+
+### 0.5.0
+
+- **New `marketplace` namespace** — browse a normalized, provider-agnostic
+  catalog (`catalog`, `categories`, `filters`) and purchase (`quote`, `buy`,
+  `orders`, `order`, `reveal`). The public `catalog` supports attribute filters
+  (`country`/`origin`/`format`/`twofa`) and `group_by` = `country` |
+  `attributes` (same-type products collapse into groups carrying
+  `prices_cents` variants).
+- **New `proxy.locations_detail(country, type)`** — per-country residential
+  state/city/ISP geo drill-down.
+- Default user-agent bumped to `eveses-python/0.5.0`.
 
 ### 0.4.0
 
