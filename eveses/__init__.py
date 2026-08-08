@@ -49,7 +49,7 @@ from .exceptions import (
 from .wallet import Wallet, WalletBalance
 from .webhooks import Webhooks, verify_webhook
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 __all__ = [
     "Eveses",

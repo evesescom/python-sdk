@@ -100,6 +100,7 @@ invisible — connection details come back on the white-label host. Hits
 client.proxy.pricing()                         # residential GB ladder + static catalogue
 client.proxy.endpoints()                       # white-label subdomains + ports
 client.proxy.locations(type="residential")     # available targeting
+client.proxy.locations_detail("us")            # per-country state/city/ISP picker
 client.proxy.quote(type="residential", gb=5)   # estimate before buying
 
 # Buy
@@ -125,6 +126,57 @@ client.proxy.trial()                            # one-time proxy free trial
 client.proxy.subscription_pause()
 client.proxy.subscription_resume()
 client.proxy.subscription_cancel()
+```
+
+## Marketplace
+
+Browse a normalized, provider-agnostic catalog of digital goods (e.g. accounts)
+and buy them. The upstream provider is never exposed. Item attributes are
+normalized on the wire: `country` (ISO-3166-1 alpha-2 uppercase, or a region slug
+like `mix`/`cis`/`eu`/`asia`/`africa`/`latam`), `origin`
+(`autoreg` | `selfreg` | `real` | `retrieve`), `format`
+(`tdata` | `session_json` | `session`), and `twofa` (bool). Read-only browse hits
+`/api/public/marketplace/*`; purchase / order endpoints hit
+`/api/v1/marketplace/*`.
+
+```python
+# Browse
+client.marketplace.categories()                  # available categories
+client.marketplace.filters("accounts")           # filter facets for a category
+
+# Plain catalog → an `items` list of individual SKUs
+catalog = client.marketplace.catalog(category="accounts", country="US", origin="autoreg")
+for item in catalog["items"]:
+    print(item["sku"], item["price_cents"])
+
+# group_by="country" | "attributes" collapses same-type SKUs into `groups`.
+# With "attributes", each group carries `prices_cents` variants + `has_attributes`.
+grouped = client.marketplace.catalog(
+    category="accounts",
+    country="US",
+    origin="autoreg",
+    group_by="attributes",
+)
+for group in grouped["groups"]:
+    print(group["prices_cents"], group["has_attributes"])
+```
+
+Purchase flow — quote, buy, then reveal the delivered goods:
+
+```python
+q = client.marketplace.quote("accounts", sku="acc_us_autoreg_tdata")
+print(q["price_cents"], q["available"])
+
+order = client.marketplace.buy(
+    "accounts",
+    sku="acc_us_autoreg_tdata",
+    quantity=1,
+    idempotency_key="my-uuid",      # also sent as Idempotency-Key header
+)
+
+client.marketplace.orders()                      # the caller's marketplace orders
+one = client.marketplace.order(order["uuid"])    # a single order by UUID
+client.marketplace.reveal(order["uuid"])         # credentials / files once completed
 ```
 
 ## Web Unblocker
@@ -314,6 +366,10 @@ python -m pytest
 ```
 
 ## Changelog
+
+### 0.5.1
+
+- Docs: added a Marketplace usage section to the README; patch release.
 
 ### 0.5.0
 
