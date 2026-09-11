@@ -92,8 +92,16 @@ class Proxy:
         plan_id: Optional[int] = None,
         location_id: Optional[int] = None,
         quantity: int = 1,
+        extra_requirements: Optional[Dict[Any, str]] = None,
     ) -> Dict[str, Any]:
-        """Estimate a purchase before buying (residential GB or a static selection)."""
+        """Estimate a purchase before buying (residential GB or a static selection).
+
+        ``extra_requirements`` maps an upstream question id (see ``pricing()``)
+        to the buyer's answer. They MOVE THE PRICE, often steeply — measured on
+        one US ISP address: $2.00 plain, $5.00 with three-device access, $5.60
+        with a location request on top. Quote with exactly the answers you
+        intend to buy with, or you will be shown one price and charged another.
+        """
         params: Dict[str, Any] = {"type": type}
         if type == "residential":
             params["gb"] = gb if gb is not None else 0
@@ -104,6 +112,8 @@ class Proxy:
             params["plan_id"] = plan_id
             params["location_id"] = location_id
             params["quantity"] = quantity
+            for question_id, answer in (extra_requirements or {}).items():
+                params[f"extra_requirements[{question_id}]"] = str(answer)
         return self._get("/api/v1/proxy/quote", params=params)
 
     def usage(self, *, from_: Optional[str] = None, to: Optional[str] = None) -> Dict[str, Any]:
@@ -145,9 +155,21 @@ class Proxy:
         location_id: Optional[int] = None,
         location_name: Optional[str] = None,
         quantity: int = 1,
+        extra_requirements: Optional[Dict[Any, str]] = None,
+        extra_requirement_labels: Optional[Dict[Any, str]] = None,
         idempotency_key: Optional[str] = None,
     ) -> ProxyOrder:
-        """Buy proxies (residential GB top-up or static IPs). Returns the order."""
+        """Buy proxies (residential GB top-up or static IPs). Returns the order.
+
+        Send the SAME ``extra_requirements`` the quote was taken with: buying
+        without them after quoting with them sells at the plain price and leaves
+        the premium unpaid. A free-text answer (a city, a subnet) is a REQUEST,
+        not a reservation — an order that cannot be filled is cancelled and
+        refunded.
+
+        ``extra_requirement_labels`` is optional and stored on the order so it
+        reads "Multi-device access: 3 Devices" rather than "9: 4".
+        """
         headers: Dict[str, str] = {}
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
@@ -164,6 +186,12 @@ class Proxy:
             if location_name is not None:
                 body["location_name"] = location_name
             body["quantity"] = quantity
+            if extra_requirements:
+                body["extra_requirements"] = {str(k): str(v) for k, v in extra_requirements.items()}
+            if extra_requirement_labels:
+                body["extra_requirement_labels"] = {
+                    str(k): str(v) for k, v in extra_requirement_labels.items()
+                }
 
         res = self._client.request(
             "POST",
