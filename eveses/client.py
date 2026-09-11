@@ -27,7 +27,7 @@ from .exceptions import (
 
 DEFAULT_BASE_URL = "https://api.eveses.io"
 DEFAULT_TIMEOUT_S = 30.0
-DEFAULT_USER_AGENT = "eveses-python/0.5.1"
+DEFAULT_USER_AGENT = "eveses-python/0.7.0"
 
 
 class Eveses:
@@ -70,12 +70,14 @@ class Eveses:
         from .proxy import Proxy
         from .quotas import Quotas
         from .trial import Trial
+        from .billing import Billing
         from .wallet import Wallet
         from .web_unblocker import WebUnblocker
         from .webhooks import Webhooks
 
         self.numbers = Numbers(self)
         self.wallet = Wallet(self)
+        self.billing = Billing(self)
         self.captcha = Captcha(self)
         self.emails = Emails(self)
         self.marketplace = Marketplace(self)
@@ -98,8 +100,15 @@ class Eveses:
         params: Optional[Mapping[str, Any]] = None,
         json_body: Optional[Mapping[str, Any]] = None,
         headers: Optional[Mapping[str, str]] = None,
+        raw: bool = False,
     ) -> Any:
-        """Send a single authenticated request and return parsed JSON."""
+        """
+        Send a single authenticated request and return parsed JSON.
+
+        ``raw=True`` returns the response body as bytes instead. Needed for
+        anything that is not text — a PDF read through ``response.text`` comes
+        back corrupted, silently, and only fails when somebody opens the file.
+        """
         url = self._build_url(path)
         merged_headers: Dict[str, str] = {
             "Authorization": f"Bearer {self.api_key}",
@@ -116,7 +125,7 @@ class Eveses:
         if json_body is not None:
             body_str = json.dumps(json_body, separators=(",", ":"))
 
-        return self._execute_with_retry(method, url, merged_headers, params, body_str)
+        return self._execute_with_retry(method, url, merged_headers, params, body_str, raw=raw)
 
     def _execute_with_retry(
         self,
@@ -126,6 +135,7 @@ class Eveses:
         params: Optional[Mapping[str, Any]],
         body: Optional[str],
         attempt: int = 0,
+        raw: bool = False,
     ) -> Any:
         try:
             response = self._session.request(
@@ -141,13 +151,15 @@ class Eveses:
 
         if response.status_code == 429 and attempt == 0:
             time.sleep(_parse_retry_after(response.headers.get("Retry-After")))
-            return self._execute_with_retry(method, url, headers, params, body, attempt + 1)
+            return self._execute_with_retry(method, url, headers, params, body, attempt + 1, raw=raw)
 
-        return self._parse_response(response)
+        return self._parse_response(response, raw=raw)
 
-    def _parse_response(self, response: requests.Response) -> Any:
+    def _parse_response(self, response: requests.Response, raw: bool = False) -> Any:
         content_type = response.headers.get("Content-Type", "")
         parsed: Any
+        if raw and response.ok:
+            return response.content
         if "application/json" in content_type:
             try:
                 parsed = response.json()
