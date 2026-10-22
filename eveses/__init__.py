@@ -50,7 +50,7 @@ from .billing import Billing, BillingProfile, Invoice, InvoiceLine
 from .wallet import Wallet, WalletBalance
 from .webhooks import Webhooks, verify_webhook
 
-__version__ = "0.7.0"
+__version__ = "0.7.2"
 
 __all__ = [
     "Eveses",

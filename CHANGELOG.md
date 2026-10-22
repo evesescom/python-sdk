@@ -4,6 +4,13 @@ All notable changes to this SDK. Versions follow the API's own
 [changelog](https://eveses.com/changelog/api); the SDK version and the API
 version are deliberately not the same number.
 
+## 0.7.2
+
+### Fixed
+
+- `eveses.__version__` and the default `User-Agent` still said 0.7.0 in the
+  0.7.1 release; both now match the package version. All four SDKs report the same version again.
+
 ## 0.7.1
 
 ### Changed
