@@ -25,7 +25,7 @@ from .exceptions import (
     EvesesValidationError,
 )
 
-DEFAULT_BASE_URL = "https://api.eveses.io"
+DEFAULT_BASE_URL = "https://api.eveses.com"
 DEFAULT_TIMEOUT_S = 30.0
 DEFAULT_USER_AGENT = "eveses-python/0.7.0"
 

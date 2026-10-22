@@ -201,5 +201,11 @@ class WebhookTests(unittest.TestCase):
         self.assertTrue(verify_webhook(body, sig, secret, timestamp=ts))
 
 
+class DefaultBaseUrlTests(unittest.TestCase):
+    def test_default_base_url_is_eveses_com(self) -> None:
+        client = Eveses(api_key="k")
+        self.assertEqual(client.base_url, "https://api.eveses.com")
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
